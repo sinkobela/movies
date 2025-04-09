@@ -6,7 +6,6 @@ import com.movies.service.MovieService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping(value = "/movies")
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class MovieController {
 
     private static final Logger logger = LoggerFactory.getLogger(MovieController.class);
