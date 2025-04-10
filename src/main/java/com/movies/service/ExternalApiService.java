@@ -5,7 +5,7 @@ import com.movies.record.Movie;
 
 import java.util.List;
 
-public interface MovieService {
+public interface ExternalApiService {
 
-    List<Movie> searchMovies(String title, String apiName) throws JsonProcessingException;
+    List<Movie> searchMovie(String title) throws JsonProcessingException;
 }

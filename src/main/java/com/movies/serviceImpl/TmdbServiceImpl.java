@@ -3,8 +3,8 @@ package com.movies.serviceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.movies.dto.*;
-import com.movies.service.TmdbService;
+import com.movies.record.*;
+import com.movies.service.ExternalApiService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +27,7 @@ import static java.util.stream.Collectors.toMap;
 
 @Service
 @RequiredArgsConstructor
-public class TmdbServiceImpl implements TmdbService {
+public class TmdbServiceImpl implements ExternalApiService {
 
     private static final Logger logger = LoggerFactory.getLogger(TmdbServiceImpl.class);
     private final ObjectMapper objectMapper;
@@ -39,25 +39,25 @@ public class TmdbServiceImpl implements TmdbService {
     private String bearerToken;
 
 
-    public List<MovieDto> searchMovie(String title) throws JsonProcessingException {
+    public List<Movie> searchMovie(String title) throws JsonProcessingException {
         logger.info("Entering TmdbService searchMovie method with title {}", title);
 
-        List<ResultDto> resultDtos = searchByTitle(title).getResults();
-        List<CreditsDto> creditsDtos = searchById(resultDtos);
-        Map<ResultDto, CreditsDto> map = pairResultsWithCredits(resultDtos, creditsDtos);
+        List<Result> results = searchByTitle(title).results();
+        List<Credits> credits = searchById(results);
+        Map<Result, Credits> map = pairResultsWithCredits(results, credits);
 
         return getMovies(map);
     }
 
-    private Map<ResultDto, CreditsDto> pairResultsWithCredits(List<ResultDto> results, List<CreditsDto> creditsList) {
+    private Map<Result, Credits> pairResultsWithCredits(List<Result> results, List<Credits> creditsList) {
         logger.info("Entering TmdbService pairResultsWithCredits method");
-        Map<ResultDto, CreditsDto> pairedMap = new HashMap<>();
+        Map<Result, Credits> pairedMap = new HashMap<>();
 
-        Map<String, CreditsDto> creditsMap = creditsList.stream()
-                .collect(toMap(CreditsDto::getId, credit -> credit));
+        Map<String, Credits> creditsMap = creditsList.stream()
+                .collect(toMap(Credits::id, credit -> credit));
 
-        for (ResultDto result : results) {
-            CreditsDto matchingCredit = creditsMap.get(result.getId());
+        for (Result result : results) {
+            Credits matchingCredit = creditsMap.get(result.id());
             if (matchingCredit != null) {
                 pairedMap.put(result, matchingCredit);
             }
@@ -65,15 +65,15 @@ public class TmdbServiceImpl implements TmdbService {
         return pairedMap;
     }
 
-    private List<MovieDto> getMovies(Map<ResultDto, CreditsDto> map) {
+    private List<Movie> getMovies(Map<Result, Credits> map) {
         logger.info("Entering TmdbService getMovies method");
-        List<MovieDto> movies = new ArrayList<>();
+        List<Movie> movies = new ArrayList<>();
 
-        for (ResultDto resultDto : map.keySet()) {
-            String year = getReleaseYear(resultDto.getRelease_date());
-            String director = getDirector(map.get(resultDto).getCrew());
+        for (Result result : map.keySet()) {
+            String year = getReleaseYear(result.releaseDate());
+            String director = getDirector(map.get(result).crew());
 
-            movies.add(new MovieDto(resultDto.getTitle(), year, director));
+            movies.add(new Movie(result.title(), year, director));
         }
         return movies;
     }
@@ -89,22 +89,22 @@ public class TmdbServiceImpl implements TmdbService {
         return "N/A";
     }
 
-    private String getDirector(List<CrewDto> crewDtos) {
+    private String getDirector(List<Crew> crews) {
         logger.info("Entering TmdbService getDirector method");
 
-        CrewDto crewDto = crewDtos.stream()
+        Crew crew = crews.stream()
                 .findFirst()
-                .orElse(new CrewDto("N/A"));
-        return crewDto.getName();
+                .orElse(new Crew("N/A"));
+        return crew.name();
     }
 
-    private TmdbDto searchByTitle(String title) throws JsonProcessingException {
+    private TmdbRecord searchByTitle(String title) throws JsonProcessingException {
         logger.info("Entering TmdbService searchByTitle method with title {}", title);
 
         String url = createUrlForSearchByTitle(title);
         ResponseEntity<String> response = makeExternalCall(url);
 
-        return mapJsonToTmdbDto(response.getBody());
+        return mapJsonToTmdbRecord(response.getBody());
     }
 
     private String createUrlForSearchByTitle(String title) {
@@ -141,24 +141,24 @@ public class TmdbServiceImpl implements TmdbService {
         return new HttpEntity<>(headers);
     }
 
-    private TmdbDto mapJsonToTmdbDto(String json) throws JsonProcessingException {
-        logger.info("Entering TmdbService mapJsonToTmdbDto method");
+    private TmdbRecord mapJsonToTmdbRecord(String json) throws JsonProcessingException {
+        logger.info("Entering TmdbService mapJsonToTmdbRecord method");
 
         return objectMapper.readValue(json, new TypeReference<>() {
         });
     }
 
-    private List<CreditsDto> searchById(List<ResultDto> resultDtos) throws JsonProcessingException {
+    private List<Credits> searchById(List<Result> results) throws JsonProcessingException {
         logger.info("Entering TmdbService searchById method");
-        List<CreditsDto> creditsDto = new ArrayList<>();
+        List<Credits> credits = new ArrayList<>();
 
-        for (ResultDto resultDto : resultDtos) {
-            String url = createUrlForSearchById(resultDto.getId());
+        for (Result r : results) {
+            String url = createUrlForSearchById(r.id());
             ResponseEntity<String> response = makeExternalCall(url);
-            CreditsDto director = selectOnlyDirector(mapJsonToCreditsDto(response.getBody()));
-            creditsDto.add(director);
+            Credits director = selectOnlyDirector(mapJsonToCredits(response.getBody()));
+            credits.add(director);
         }
-        return creditsDto;
+        return credits;
     }
 
     private String createUrlForSearchById(String id) {
@@ -170,23 +170,22 @@ public class TmdbServiceImpl implements TmdbService {
                 .toUriString();
     }
 
-    private CreditsDto selectOnlyDirector(CreditsDto creditsDto) {
+    private Credits selectOnlyDirector(Credits credits) {
         logger.info("Entering TmdbService selectOnlyDirector method");
 
-        CrewDto crewDto = creditsDto.getCrew()
+        Crew director = credits.crew()
                 .stream()
-                .filter(crew -> "Directing".equalsIgnoreCase(crew.getKnownForDepartment()))
-                .filter(crew -> "Directing".equalsIgnoreCase(crew.getDepartment()))
-                .filter(crew -> "Director".equalsIgnoreCase(crew.getJob()))
+                .filter(crew -> "Directing".equalsIgnoreCase(crew.knownForDepartment()))
+                .filter(crew -> "Directing".equalsIgnoreCase(crew.department()))
+                .filter(crew -> "Director".equalsIgnoreCase(crew.job()))
                 .findFirst()
-                .orElse(new CrewDto("N/A"));
+                .orElse(new Crew("N/A"));
 
-        creditsDto.setCrew(List.of(crewDto));
-        return creditsDto;
+        return new Credits(credits.id(), List.of(director));
     }
 
-    private CreditsDto mapJsonToCreditsDto(String json) throws JsonProcessingException {
-        logger.info("Entering TmdbService mapJsonToCreditsDto method");
+    private Credits mapJsonToCredits(String json) throws JsonProcessingException {
+        logger.info("Entering TmdbService mapJsonToCredits method");
 
         return objectMapper.readValue(json, new TypeReference<>() {
         });

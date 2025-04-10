@@ -1,7 +1,7 @@
 package com.movies.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.movies.dto.MovieDto;
+import com.movies.record.Movie;
 import com.movies.service.MovieService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -21,7 +21,7 @@ public class MovieController {
 
     @Cacheable(value = "movieCache")
     @GetMapping(value = "/{movieTitle}")
-    public List<MovieDto> searchMovies(@PathVariable String movieTitle, @RequestParam String apiName) throws JsonProcessingException {
+    public List<Movie> searchMovies(@PathVariable String movieTitle, @RequestParam String apiName) throws JsonProcessingException {
         logger.info("Entering MovieController searchMovies method with parameters: movieTitle={}, apiName={}",
                 movieTitle, apiName);
 

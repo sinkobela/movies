@@ -3,10 +3,10 @@ package com.movies.serviceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.movies.dto.MovieDto;
-import com.movies.dto.OmdbDto;
-import com.movies.dto.SearchDto;
-import com.movies.service.OmdbService;
+import com.movies.record.Movie;
+import com.movies.record.OmdbRecord;
+import com.movies.record.Search;
+import com.movies.service.ExternalApiService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +20,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class OmdbServiceImpl implements OmdbService {
+public class OmdbServiceImpl implements ExternalApiService {
 
     private static final Logger logger = LoggerFactory.getLogger(OmdbServiceImpl.class);
     private final ObjectMapper objectMapper;
@@ -30,22 +30,22 @@ public class OmdbServiceImpl implements OmdbService {
     private String apiKey;
 
 
-    public List<MovieDto> searchMovie(String title) throws JsonProcessingException {
+    public List<Movie> searchMovie(String title) throws JsonProcessingException {
         logger.info("Entering OmdbService searchMovie method with title {}", title);
 
-        OmdbDto omdbDto = searchByKeyword(title);
+        OmdbRecord omdb = searchByKeyword(title);
 
-        return searchByImdbId(omdbDto);
+        return searchByImdbId(omdb);
     }
 
-    private OmdbDto searchByKeyword(String title) throws JsonProcessingException {
+    private OmdbRecord searchByKeyword(String title) throws JsonProcessingException {
         logger.info("Entering OmdbService searchByKeyword method with title {}", title);
         RestTemplate restTemplate = new RestTemplate();
 
         String url = createUrlForSearchByTitle(title);
         String jsonResponse = restTemplate.getForObject(url, String.class);
 
-        return mapJsonToOmdbDto(jsonResponse);
+        return mapJsonToOmdbRecord(jsonResponse);
     }
 
     private String createUrlForSearchByTitle(String title) {
@@ -58,22 +58,22 @@ public class OmdbServiceImpl implements OmdbService {
                 .toUriString();
     }
 
-    private OmdbDto mapJsonToOmdbDto(String json) throws JsonProcessingException {
-        logger.info("Entering OmdbService mapJsonToOmdbDto method");
+    private OmdbRecord mapJsonToOmdbRecord(String json) throws JsonProcessingException {
+        logger.info("Entering OmdbService mapJsonToOmdbRecord method");
 
         return objectMapper.readValue(json, new TypeReference<>() {
         });
     }
 
-    private List<MovieDto> searchByImdbId(OmdbDto omdbDto) throws JsonProcessingException {
+    private List<Movie> searchByImdbId(OmdbRecord omdb) throws JsonProcessingException {
         logger.info("Entering OmdbService searchByImdbId method");
         RestTemplate restTemplate = new RestTemplate();
-        List<MovieDto> movies = new ArrayList<>();
+        List<Movie> movies = new ArrayList<>();
 
-        for (SearchDto searchDto : omdbDto.getSearch()) {
-            String url = createUrlForSearchByImdbId(searchDto.getImdbID());
+        for (Search search : omdb.search()) {
+            String url = createUrlForSearchByImdbId(search.imdbID());
             String jsonResponse = restTemplate.getForObject(url, String.class);
-            movies.add(mapJsonToMovieDto(jsonResponse));
+            movies.add(mapJsonToMovie(jsonResponse));
         }
         return movies;
     }
@@ -88,8 +88,8 @@ public class OmdbServiceImpl implements OmdbService {
                 .toUriString();
     }
 
-    private MovieDto mapJsonToMovieDto(String json) throws JsonProcessingException {
-        logger.info("Entering OmdbService mapJsonToMovieDto method");
+    private Movie mapJsonToMovie(String json) throws JsonProcessingException {
+        logger.info("Entering OmdbService mapJsonToMovie method");
 
         return objectMapper.readValue(json, new TypeReference<>() {
         });
