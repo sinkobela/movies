@@ -3,7 +3,7 @@ package com.movies.serviceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.movies.record.*;
+import com.movies.dto.*;
 import com.movies.service.ExternalApiService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;

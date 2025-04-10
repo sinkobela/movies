@@ -1,7 +1,7 @@
 package com.movies.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.movies.record.Movie;
+import com.movies.dto.Movie;
 import com.movies.service.MovieService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;

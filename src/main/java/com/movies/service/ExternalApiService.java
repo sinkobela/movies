@@ -1,7 +1,7 @@
 package com.movies.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.movies.record.Movie;
+import com.movies.dto.Movie;
 
 import java.util.List;
 

@@ -2,7 +2,7 @@ package com.movies.serviceImpl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.movies.model.MovieSearchPattern;
-import com.movies.record.Movie;
+import com.movies.dto.Movie;
 import com.movies.repository.MovieSearchPatternRepository;
 import com.movies.service.MovieService;
 import lombok.RequiredArgsConstructor;

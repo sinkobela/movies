@@ -1,4 +1,4 @@
-package com.movies.record;
+package com.movies.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.NonNull;
